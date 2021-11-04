@@ -1,0 +1,144 @@
+openapi: 3.0.0 
+info: 
+  description: This API provides audit info 
+  version: "1.0.0" 
+  title: Audit API 
+  contact: 
+    email: ata3@my.bcit.ca
+ 
+paths: 
+  /ticket_purchase: 
+    get: 
+      summary: gets a ticket purchase from history 
+      operationId: app.get_ticket_purchase 
+      description: Gets ticket purchase from the event store 
+      parameters: 
+        - name: index 
+          in: query 
+          description: Gets the TP at the index in the event store 
+          schema: 
+            type: integer 
+            example: 100 
+      responses: 
+        '200': 
+          description: Successfully returned a ticket purchase event 
+          content: 
+            application/json: 
+              schema: 
+                type: object 
+                items: 
+                  $ref: '#/components/schemas/TicketPurchase' 
+        '400': 
+          description: Invalid request 
+          content: 
+            application/json: 
+              schema: 
+                type: object 
+                properties: 
+                  message: 
+                    type: string 
+        '404': 
+          description: Not Found 
+          content: 
+            application/json: 
+              schema: 
+                type: object 
+                properties: 
+                  message: 
+                    type: string 
+ 
+  /music_event: 
+    get: 
+      summary: gets a music event reading from history 
+      operationId: app.get_music_event
+      description: Gets music event from the event store 
+      parameters: 
+        - name: index 
+          in: query 
+          description: Gets the ME at the index in the event store 
+          schema: 
+            type: integer 
+            example: 100 
+      responses: 
+        '200': 
+          description: Successfully returned a music event creation event 
+          content: 
+            application/json: 
+              schema: 
+                type: object 
+                items: 
+                  $ref: '#/components/schemas/EventCreation' 
+        '400': 
+          description: Invalid request 
+          content: 
+            application/json: 
+              schema: 
+                type: object 
+                properties: 
+                  message: 
+                    type: string 
+        '404': 
+          description: Not Found 
+ 
+components:
+  schemas:
+    TicketPurchase:
+      type: object
+      required:
+        - id
+        - purchaser
+        - eventDate
+        - seat
+        - price
+        - numTickets
+      properties:
+        id:
+          type: integer
+          example: 101
+        purchaser:
+          type: string
+          example: Johnny Cash
+        eventDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        seat:
+          type: string
+          example: 221A
+        price:
+          type: number
+          format: double
+          example: 29.99
+        numTickets:
+          type: integer
+          example: 2
+          
+    EventCreation:
+      type: object
+      required:
+        - id
+        - venue
+        - capacity
+        - eventDate
+        - headliner
+        - openingAct
+      properties:
+        id:
+          type: integer
+          example: 101
+        venue:
+          type: string
+          example: The Orpheum
+        capacity:
+          type: integer
+          example: 3000
+        eventDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        headliner:
+          type: string
+          example: The New Pornographers
+        openingAct:
+          type: string
+          example: Broken Social Scene

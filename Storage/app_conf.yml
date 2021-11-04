@@ -1,0 +1,11 @@
+version: 1
+datastore:
+  user: root
+  password: password
+  hostname: kafka3855.westus2.cloudapp.azure.com
+  port: 3306
+  db: events
+events: 
+  hostname: kafka3855.westus2.cloudapp.azure.com
+  port: 9092 
+  topic: events

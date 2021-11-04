@@ -1,0 +1,119 @@
+openapi: 3.0.0
+info:
+  description: This API receives ticket purchases and cancellations from a ticketing app
+  version: "1.0.0"
+  title: Ticket API
+  contact:
+    email: ata3@my.bcit.ca
+    
+tags:
+  - name: users
+    description: Operations available to customers and venue owners
+    
+paths:
+  /purchase:
+    post:
+      tags:
+        - users
+      summary: purchases tickets
+      operationId: app.purchase_ticket
+      description: ticket is purchased and seat removed from venue for that event
+      responses:
+        '201':
+          description: ticket purchased
+        '400':
+          description: 'invalid input, object invalid'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPurchase'
+        description: Ticket item to add
+        
+  /create:
+    post:
+      tags:
+        - users
+      summary: create event
+      operationId: app.create_event
+      description: event is created and tickets are available to general public
+      responses:
+        '201':
+          description: event created
+        '400':
+          description: 'invalid input, object invalid'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreation'
+        description: Event to be created
+
+components:
+  schemas:
+    TicketPurchase:
+      type: object
+      required:
+        - id
+        - purchaser
+        - eventDate
+        - seat
+        - price
+        - numTickets
+      properties:
+        id:
+          # type: string
+          # format: uuid
+          # example: d290f1ee-6c54-4b01-90e6-d701748f0851
+          type: integer
+          example: 101
+        purchaser:
+          type: string
+          example: Johnny Cash
+        eventDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        seat:
+          type: string
+          example: 221A
+        price:
+          type: number
+          format: double
+          example: 29.99
+        numTickets:
+          type: integer
+          example: 2
+          
+    EventCreation:
+      type: object
+      required:
+        - id
+        - venue
+        - capacity
+        - eventDate
+        - headliner
+        - openingAct
+      properties:
+        id:
+          # type: string
+          # format: uuid
+          # example: d290f1ee-6c54-4b01-90e6-d701748f0851
+          type: integer
+          example: 101
+        venue:
+          type: string
+          example: The Orpheum
+        capacity:
+          type: integer
+          example: 3000
+        eventDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        headliner:
+          type: string
+          example: The New Pornographers
+        openingAct:
+          type: string
+          example: Broken Social Scene
