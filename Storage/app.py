@@ -99,11 +99,12 @@ def get_music_events(timestamp):
 
 def process_messages(): 
     """ Process event messages """ 
+    logger.info("Message: Processing... 1") 
     hostname = "%s:%d" % (app_config["events"]["hostname"],   
                           app_config["events"]["port"]) 
     client = KafkaClient(hosts=hostname) 
     topic = client.topics[str.encode(app_config["events"]["topic"])] 
-     
+    logger.info("Message: Processing... 2 ") 
     # Create a consume on a consumer group, that only reads new messages  
     # (uncommitted messages) when the service re-starts (i.e., it doesn't  
     # read all the old messages from the history in the message queue). 
@@ -114,14 +115,28 @@ def process_messages():
     # This is blocking - it will wait for a new message 
     for msg in consumer: 
         msg_str = msg.value.decode('utf-8') 
+        print(msg_str)
         msg = json.loads(msg_str) 
+        print(msg)
         logger.info("Message: %s" % msg) 
  
         payload = msg["payload"] 
  
         if msg["type"] == "tp": # Change this to your event type 
             # Store the event1 (i.e., the payload) to the DB 
-            purchase_ticket(payload)
+            session = DB_SESSION()
+
+            tp = TicketPurchase(payload['purchaser'],
+                            payload['eventDate'],
+                            payload['seat'],
+                            payload['price'],
+                            payload['numTickets'])
+
+            session.add(tp)
+
+            session.commit()
+            session.close()
+            logger.debug(f"Stored event purchase request with a unique id of {payload['id']}")
         elif msg["type"] == "me": # Change this to your event type 
             # Store the event2 (i.e., the payload) to the DB 
             create_event(payload)
@@ -135,6 +150,6 @@ app.add_api("openapi.yml", strict_validation=True, validate_responses=True)
 
 if __name__ == "__main__":
     t1 = Thread(target=process_messages) 
-    t1.setDaemon(True) 
-    t1.start() 
+    t1.setDaemon(True)
+    t1.start()
     app.run(port=8090)
