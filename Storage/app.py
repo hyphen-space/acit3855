@@ -3,12 +3,13 @@ import yaml
 import logging
 import logging.config
 import datetime
+from time import sleep
 from connexion import NoContent
 import json
 from pykafka import KafkaClient
 from pykafka.common import OffsetType
 from threading import Thread
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 from base import Base
 from ticket_purchase import TicketPurchase
@@ -68,43 +69,60 @@ def create_event(body):
 
     return NoContent, 201
 
-def get_ticket_purchases(timestamp):
+def get_ticket_purchases(start_timestamp, end_timestamp):
     """ Gets new ticket purchases after the timestamp """
     session = DB_SESSION()
-    timestamp_datetime = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
-    ticket_purchases = session.query(TicketPurchase).filter(TicketPurchase.date_created >=
-                                    timestamp_datetime)
+    start_timestamp_datetime = datetime.datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    end_timestamp_datetime =  datetime.datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    ticket_purchases = session.query(TicketPurchase).filter(and_(TicketPurchase.date_created >= start_timestamp_datetime, 
+             TicketPurchase.date_created < end_timestamp_datetime))
     ticket_purchases_list = []
     for ticket_purchase in ticket_purchases:
         ticket_purchases_list.append(ticket_purchase.to_dict())
     session.close()
     logger.info("Query for Ticket Purchase readings after %s returns %d results" %
-                (timestamp, len(ticket_purchases_list)))
+                (start_timestamp, len(ticket_purchases_list)))
     
     return ticket_purchases_list, 200
 
-def get_music_events(timestamp):
+def get_music_events(start_timestamp, end_timestamp):
     """ Gets new music events after the timestamp """
     session = DB_SESSION()
-    timestamp_datetime = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
-    music_events = session.query(MusicEvent).filter(MusicEvent.date_created >= timestamp_datetime)
+    start_timestamp_datetime = datetime.datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    end_timestamp_datetime =  datetime.datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    music_events = session.query(MusicEvent).filter(and_(MusicEvent.date_created >= start_timestamp_datetime, 
+             MusicEvent.date_created < end_timestamp_datetime))
     music_events_list = []
     for music_event in music_events:
         music_events_list.append(music_event.to_dict())
     session.close()
     logger.info("Query for Music readings after %s returns %d results" %
-                (timestamp, len(music_events_list)))
+                (start_timestamp, len(music_events_list)))
     
     return music_events_list, 200
 
 def process_messages(): 
     """ Process event messages """ 
-    logger.info("Message: Processing... 1") 
+    logger.info("Message: Processing...") 
     hostname = "%s:%d" % (app_config["events"]["hostname"],   
                           app_config["events"]["port"]) 
-    client = KafkaClient(hosts=hostname) 
-    topic = client.topics[str.encode(app_config["events"]["topic"])] 
-    logger.info("Message: Processing... 2 ") 
+    
+    num_retries = 0
+    while num_retries <=  app_config["kafka"]["max_retries"]:
+        logger.info(f"Trying to connect to Kafka. Attempt #{num_retries + 1}")
+        try:
+            print("trying")
+            print(num_retries)
+            client = KafkaClient(hosts=hostname) 
+            topic = client.topics[str.encode(app_config["events"]["topic"])]
+        except:
+            logger.error("Cannot connect to Kafka. Retrying...")
+            sleep(app_config["kafka"]["sleep_duration"])
+            num_retries += 1
+        else:
+            logger.info(f"Connected to Kafka")
+            break
+
     # Create a consume on a consumer group, that only reads new messages  
     # (uncommitted messages) when the service re-starts (i.e., it doesn't  
     # read all the old messages from the history in the message queue). 
@@ -139,7 +157,19 @@ def process_messages():
             logger.debug(f"Stored event purchase request with a unique id of {payload['id']}")
         elif msg["type"] == "me": # Change this to your event type 
             # Store the event2 (i.e., the payload) to the DB 
-            create_event(payload)
+            session = DB_SESSION()
+
+            me = MusicEvent(payload['venue'],
+                            payload['capacity'],
+                            payload['eventDate'],
+                            payload['headliner'],
+                            payload['openingAct'])
+
+            session.add(me)
+
+            session.commit()
+            session.close()
+            logger.debug(f"Stored event purchase request with a unique id of {payload['id']}")
         # Commit the new message as being read 
         consumer.commit_offsets() 
 

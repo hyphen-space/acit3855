@@ -57,13 +57,20 @@ paths:
       operationId: app.get_ticket_purchases
       description: Gets blood ticket purchases added after a timestamp 
       parameters: 
-        - name: timestamp 
+        - name: start_timestamp 
           in: query 
           description: Limits the number of items on a page 
           schema: 
             type: string 
             format: date-time 
-            example: 2016-08-29T09:12:33.001Z 
+            example: 2016-08-29T09:12:33.001Z
+        - name: end_timestamp
+          in: query
+          description: Limits number of items on a page
+          schema:
+            type: string
+            format: date-time
+            example: '2016-08-29T09:12:33.001Z'
       responses: 
         '200': 
           description: Successfully returned a list of ticket purchase events 
@@ -91,7 +98,14 @@ paths:
       operationId: app.get_music_events
       description: Gets music events added after a timestamp
       parameters:
-        - name: timestamp
+        - name: start_timestamp
+          in: query
+          description: Limits number of items on a page
+          schema:
+            type: string
+            format: date-time
+            example: '2016-08-29T09:12:33.001Z'
+        - name: end_timestamp
           in: query
           description: Limits number of items on a page
           schema:

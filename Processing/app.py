@@ -33,8 +33,8 @@ def get_stats():
 
 def populate_stats(): 
     """ Periodically update stats """ 
-    current_datetime = (datetime.datetime.now() - datetime.timedelta(seconds=30)).strftime("%Y-%m-%d %H:%M:%S.%f")
-    print(current_datetime)
+    # current_datetime = (datetime.datetime.now() - datetime.timedelta(seconds=30)).strftime("%Y-%m-%d %H:%M:%S.%f")
+    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S.%f")
     logger.info("Start Periodic Processing")
     if os.path.isfile(app_config["datastore"]["filename"]):
         with open(app_config["datastore"]["filename"], "r") as f:
@@ -46,18 +46,17 @@ def populate_stats():
                         "num_music_events": 0,
                         "max_music_event_capacity": 0,
                         "last_updated": current_datetime}
+    
+    last_updated = current_stats["last_updated"]
 
-    r1 = requests.get(app_config["eventstore"]["url"] + f"?timestamp={current_datetime}")
-    print(r1.json())
-    print(r1.text)
-    print(r1.content)
+    r1 = requests.get(app_config["eventstore"]["url"] + f"?start_timestamp={last_updated}&end_timestamp={current_datetime}")
 
     if r1.status_code != 200:
         logger.error("Something went wrong, could not retrieve purchase events")
     else:
         logger.info(f"Received {len(r1.json())} purchase events")
     
-    r2 = requests.get(app_config["eventstore"]["url2"] + f"?timestamp={current_datetime}") 
+    r2 = requests.get(app_config["eventstore"]["url2"] + f"?start_timestamp={last_updated}&end_timestamp={current_datetime}") 
     if r2.status_code != 200:
         logger.error("Something went wrong, could not retrieve music events")
     else:

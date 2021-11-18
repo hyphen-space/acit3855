@@ -3,6 +3,7 @@ import json
 import datetime
 from pykafka import KafkaClient
 from connexion import NoContent
+from time import sleep
 import requests
 import yaml
 import logging
@@ -17,14 +18,30 @@ with open('log_conf.yml', 'r') as f:
 
 logger = logging.getLogger('basicLogger')
 
+    
+num_retries = 0
+while num_retries <= app_config["kafka"]["max_retries"]:
+    logger.info(f"Trying to connect to Kafka. Attempt #{num_retries + 1}")
+    try:
+        client = KafkaClient(hosts=f'{app_config["events"]["hostname"]}:{app_config["events"]["port"]}') 
+        topic = client.topics[str.encode(app_config["events"]["topic"])]
+    except:
+        logger.error("Cannot connect to Kafka. Retrying...")
+        sleep(app_config["kafka"]["sleep_duration"])
+        num_retries += 1
+    else:
+        logger.info(f"Connected to Kafka")
+        break
+
+
 
 def purchase_ticket(body):
     # url = app_config["eventstore1"]["url"]
     logger.info(f"Received event 'purchase' request with a unique id of {body['id']}")
     # res = requests.post(url, json=body)
     
-    client = KafkaClient(hosts=f'{app_config["events"]["hostname"]}:{app_config["events"]["port"]}') 
-    topic = client.topics[str.encode(app_config["events"]["topic"])]
+    # client = KafkaClient(hosts=f'{app_config["events"]["hostname"]}:{app_config["events"]["port"]}') 
+    # topic = client.topics[str.encode(app_config["events"]["topic"])]
     producer = topic.get_sync_producer() 
     
     msg = { "type": "tp",  
@@ -43,8 +60,8 @@ def create_event(body):
     logger.info(f"Received event 'purchase' request with a unique id of {body['id']}")
     # res = requests.post(url, json=body)
 
-    client = KafkaClient(hosts=f'{app_config["events"]["hostname"]}:{app_config["events"]["port"]}') 
-    topic = client.topics[str.encode(app_config["events"]["topic"])]
+    # client = KafkaClient(hosts=f'{app_config["events"]["hostname"]}:{app_config["events"]["port"]}') 
+    # topic = client.topics[str.encode(app_config["events"]["topic"])]
     producer = topic.get_sync_producer() 
     
     msg = { "type": "me",  
