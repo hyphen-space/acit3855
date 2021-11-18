@@ -9,4 +9,4 @@ events:
   topic: events 
 kafka:
   max_retries: 10
-  sleep: 10
+  sleep_duration: 10
