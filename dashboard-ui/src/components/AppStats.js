@@ -8,7 +8,7 @@ export default function AppStats() {
 
 	const getStats = () => {
 	
-        fetch(`http://<Cloud DNS>:8100/stats`)
+        fetch(`http://kafka3855.westus2.cloudapp.azure.com:8100/stats`)
             .then(res => res.json())
             .then((result)=>{
 				console.log("Received Stats")
@@ -39,17 +39,14 @@ export default function AppStats() {
 							<th>Heart Rate</th>
 						</tr>
 						<tr>
-							<td># BP: {stats['num_bp_readings']}</td>
-							<td># HR: {stats['num_hr_readings']}</td>
+							<td># TP: {stats['num_ticket_purchases']}</td>
+							<td># ME: {stats['num_music_events']}</td>
 						</tr>
 						<tr>
-							<td colspan="2">Max BP Systolic: {stats['max_bp_sys_reading']}</td>
+							<td colspan="2">Max event capacity: {stats['max_music_event_capacity']}</td>
 						</tr>
 						<tr>
-							<td colspan="2">Max BR Diastolic: {stats['max_bp_dia_reading']}</td>
-						</tr>
-						<tr>
-							<td colspan="2">Max HR: {stats['max_bp_sys_reading']}</td>
+							<td colspan="2">Max ticket price: {stats['max_ticket_price']}</td>
 						</tr>
 					</tbody>
                 </table>
