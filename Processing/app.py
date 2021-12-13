@@ -9,15 +9,38 @@ import logging.config
 from apscheduler.schedulers.background import BackgroundScheduler
 import os.path
 import datetime
+import os 
+ 
+if "TARGET_ENV" in os.environ and os.environ["TARGET_ENV"] == "test": 
+    print("In Test Environment") 
+    app_conf_file = "/config/app_conf.yml" 
+    log_conf_file = "/config/log_conf.yml" 
+else: 
+    print("In Dev Environment") 
+    app_conf_file = "app_conf.yml" 
+    log_conf_file = "log_conf.yml" 
+ 
+with open(app_conf_file, 'r') as f: 
+    app_config = yaml.safe_load(f.read()) 
+ 
+# External Logging Configuration 
+with open(log_conf_file, 'r') as f: 
+    log_config = yaml.safe_load(f.read()) 
+    logging.config.dictConfig(log_config) 
+ 
+logger = logging.getLogger('basicLogger') 
+ 
+logger.info("App Conf File: %s" % app_conf_file) 
+logger.info("Log Conf File: %s" % log_conf_file)
 
-with open('app_conf.yml', 'r') as f:
-    app_config = yaml.safe_load(f.read())
+# with open('app_conf.yml', 'r') as f:
+#     app_config = yaml.safe_load(f.read())
 
-with open('log_conf.yml', 'r') as f:
-    log_config = yaml.safe_load(f.read())
-    logging.config.dictConfig(log_config)
+# with open('log_conf.yml', 'r') as f:
+#     log_config = yaml.safe_load(f.read())
+#     logging.config.dictConfig(log_config)
 
-logger = logging.getLogger('basicLogger')
+# logger = logging.getLogger('basicLogger')
 
 def get_stats():
     logger.info("Request started")
@@ -106,9 +129,13 @@ def init_scheduler():
 
 
 app = connexion.FlaskApp(__name__, specification_dir='')
-CORS(app.app)
-app.app.config['CORS_HEADERS'] = 'Content-Type'
-app.add_api("openapi.yml", strict_validation=True, validate_responses=True)
+#CORS(app.app)
+#app.app.config['CORS_HEADERS'] = 'Content-Type'
+#app.add_api("openapi.yml", strict_validation=True, validate_responses=True)
+if "TARGET_ENV" not in os.environ or os.environ["TARGET_ENV"] != "test":
+    CORS(app.app)
+    app.app.config['CORS_HEADERS'] = 'Content-Type'
+app.add_api("openapi.yml", base_path="/processing", strict_validation=True, validate_responses=True)
 
 if __name__ == "__main__":
     # run our standalone gevent server
